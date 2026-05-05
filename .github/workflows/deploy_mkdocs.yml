@@ -41,8 +41,4 @@ jobs:
           git fetch origin gh-pages --depth=1
 
       - name: Deploy documentation and update alias for latest
-        run: |
-            uv run mike deploy ${{ steps.module.outputs.version}} latest --push --update-aliases --config-file docs/mkdocs.yml
-     
-      - name: Deploy docs
-        run: uv run --group docs --extra psycopg mike deploy ${{ steps.module.outputs.version}} latest --push --update-aliases --config-file docs/mkdocs.yml
+        run: uv run mike deploy ${{ steps.module.outputs.version}} latest --push --update-aliases --config-file docs/mkdocs.yml
