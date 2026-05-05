@@ -47,23 +47,17 @@ def SearchIdParams(
 
 @cached(  # type: ignore
     ttl_cache,
-    key=lambda pool,
-    collection_id,
-    ids,
-    bbox,
-    datetime,
-    query,
-    sortby,
-    filter_expr,
-    filter_lang: hashkey(
-        collection_id,
-        ids,
-        bbox,
-        datetime,
-        query,
-        sortby,
-        filter_expr,
-        filter_lang,
+    key=lambda pool, collection_id, ids, bbox, datetime, query, sortby, filter_expr, filter_lang: (
+        hashkey(
+            collection_id,
+            ids,
+            bbox,
+            datetime,
+            query,
+            sortby,
+            filter_expr,
+            filter_lang,
+        )
     ),
     lock=Lock(),
 )
