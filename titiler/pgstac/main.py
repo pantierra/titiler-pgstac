@@ -34,6 +34,7 @@ from titiler.core.models.OGC import Conformance, Landing
 from titiler.core.resources.enums import MediaType, OptionalHeader
 from titiler.core.utils import accept_media_type, create_html_response, update_openapi
 from titiler.extensions import stacRenderExtension, wmtsExtension
+from titiler.extensions.render import _adapt_render_for_v2
 from titiler.mosaic.errors import MOSAIC_STATUS_CODES
 from titiler.mosaic.extensions.wmts import wmtsExtension as wmtsExtensionMosaic
 from titiler.pgstac import __version__ as titiler_pgstac_version
@@ -212,6 +213,14 @@ TITILER_CONFORMS_TO = {
     "http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/json",
 }
 
+
+def _get_renders_collection(obj) -> dict:
+    renders = obj.info().metadata.defaults_params or {}
+    for render in renders.values():
+        _adapt_render_for_v2(render)
+    return renders
+
+
 ###############################################################################
 # STAC Search Endpoints
 searches = MosaicTilerFactory(
@@ -225,7 +234,7 @@ searches = MosaicTilerFactory(
     extensions=[
         searchInfoExtension(),
         wmtsExtensionMosaic(
-            get_renders=lambda obj: obj.info().metadata.defaults_params or {}  # type: ignore [attr-defined]
+            get_renders=_get_renders_collection  # type: ignore [attr-defined]
         ),
     ],
     templates=templates,
@@ -267,7 +276,7 @@ collection = MosaicTilerFactory(
     extensions=[
         searchInfoExtension(),
         wmtsExtensionMosaic(
-            get_renders=lambda obj: obj.info().metadata.defaults_params or {}  # type: ignore [attr-defined]
+            get_renders=_get_renders_collection  # type: ignore [attr-defined]
         ),
     ],
     templates=templates,
@@ -277,15 +286,23 @@ app.include_router(
 )
 TITILER_CONFORMS_TO.update(collection.conforms_to)
 
+
 ###############################################################################
 # STAC Item Endpoints
+def _get_renders_item(obj) -> dict:
+    renders = obj.item.properties.get("renders", {})
+    for render in renders.values():
+        _adapt_render_for_v2(render)
+    return renders
+
+
 stac = MultiBaseTilerFactory(
     reader=PgSTACReader,
     path_dependency=ItemIdParams,
     router_prefix="/collections/{collection_id}/items/{item_id}",
     add_viewer=True,
     extensions=[
-        wmtsExtension(get_renders=lambda obj: obj.item.properties.get("renders", {})),  # type: ignore [attr-defined]
+        wmtsExtension(get_renders=_get_renders_item),  # type: ignore [attr-defined]
         stacRenderExtension(),
     ],
     templates=templates,

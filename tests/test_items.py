@@ -27,6 +27,18 @@ def test_stac_items(rio, app):
     response = app.get(
         "/collections/noaa-emergency-response/items/20200307aC0853900w361030/info",
     )
+    assert response.status_code == 422
+
+    response = app.get(
+        "/collections/noaa-emergency-response/items/20200307aC0853900w361030/info?assets=:all:",
+    )
+    assert response.status_code == 200
+    resp = response.json()
+    assert resp["cog"]
+
+    response = app.get(
+        "/collections/noaa-emergency-response/items/20200307aC0853900w361030/info?assets=cog",
+    )
     assert response.status_code == 200
     resp = response.json()
     assert resp["cog"]
@@ -79,7 +91,7 @@ def test_stac_items(rio, app):
     response = app.get(
         "/collections/noaa-emergency-response/items/20200307aC0853900w361030/WebMercatorQuad/map.html",
     )
-    assert response.status_code == 400
+    assert response.status_code == 422
 
     response = app.get(
         "/collections/noaa-emergency-response/items/20200307aC0853900w361030/WebMercatorQuad/map.html",

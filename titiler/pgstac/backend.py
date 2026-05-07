@@ -3,7 +3,7 @@
 import json
 import logging
 from threading import Lock
-from typing import Any
+from typing import Any, cast
 
 import attr
 from cachetools import TTLCache, cached
@@ -22,7 +22,7 @@ from rio_tiler.types import BBox
 
 from titiler.pgstac.errors import MosaicNotFoundError
 from titiler.pgstac.model import Search
-from titiler.pgstac.reader import SimpleSTACReader
+from titiler.pgstac.reader import Item, SimpleSTACReader
 from titiler.pgstac.settings import CacheSettings, PgstacSettings, RetrySettings
 from titiler.pgstac.utils import retry
 
@@ -96,7 +96,7 @@ class PGSTACBackend(BaseBackend):
         """Get asset name."""
         return f"{asset['collection']}/{asset['id']}"
 
-    def assets_for_tile(self, x: int, y: int, z: int, **kwargs: Any) -> list[dict]:
+    def assets_for_tile(self, x: int, y: int, z: int, **kwargs: Any) -> list[Item]:
         """Retrieve assets for tile."""
         bbox = self.tms.bounds(Tile(x, y, z))
         return self.get_assets(Polygon.from_bounds(*bbox), **kwargs)
@@ -107,7 +107,7 @@ class PGSTACBackend(BaseBackend):
         lat: float,
         coord_crs: CRS = WGS84_CRS,
         **kwargs: Any,
-    ) -> list[dict]:
+    ) -> list[Item]:
         """Retrieve assets for point."""
         # Point search is currently broken within PgSTAC
         # in order to return the correct result we need to make sure exitwhenfull and skipcovered options
@@ -135,7 +135,7 @@ class PGSTACBackend(BaseBackend):
         ymax: float,
         coord_crs: CRS = WGS84_CRS,
         **kwargs: Any,
-    ) -> list[dict]:
+    ) -> list[Item]:
         """Retrieve assets for bbox."""
         if coord_crs != WGS84_CRS:
             xmin, ymin, xmax, ymax = transform_bounds(
@@ -171,7 +171,7 @@ class PGSTACBackend(BaseBackend):
         time_limit: int | None = None,
         exitwhenfull: bool | None = None,
         skipcovered: bool | None = None,
-    ) -> list[dict]:
+    ) -> list[Item]:
         """Find assets."""
         fields = fields or {
             "include": ["assets", "id", "bbox", "collection"],
@@ -219,7 +219,8 @@ class PGSTACBackend(BaseBackend):
         features = resp.get("features", [])
 
         logger.info(f"found {len(features)} assets")
-        return features
+
+        return [cast(Item, itm) for itm in features]
 
     @cached(  # type: ignore
         ttl_cache,

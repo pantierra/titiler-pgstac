@@ -22,9 +22,6 @@ def test_pgstac_reader():
         assert stac._get_asset_info("cog")
         assert stac.tile(4293, 6424, 14, assets="cog")
 
-        assert stac._get_asset_info("vrt://cog?bands=1")
-        assert stac.tile(4293, 6424, 14, assets="vrt://cog?bands=1")
-
 
 def test_pgstac_simple_reader():
     """Test simple Dict STACReader."""
@@ -38,6 +35,3 @@ def test_pgstac_simple_reader():
         assert stac.assets == ["cog"]
         assert stac._get_asset_info("cog")
         assert stac.tile(4293, 6424, 14, assets="cog")
-
-        assert stac._get_asset_info("vrt://cog?bands=1")
-        assert stac.tile(4293, 6424, 14, assets="vrt://cog?bands=1")

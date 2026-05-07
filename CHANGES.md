@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* change: update titiler requirement to `>=2.0,<2.1`
+* remove: support for `vrt://{asset_name}` assets
+
 ## 2.1.0 (2026-03-05)
 
 * disable tests for pre-0.9 pgstac versions
