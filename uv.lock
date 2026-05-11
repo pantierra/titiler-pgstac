@@ -3443,7 +3443,7 @@ dev = [
     { name = "owslib" },
     { name = "pre-commit" },
     { name = "psycopg", extras = ["pool"] },
-    { name = "pypgstac", specifier = ">=0.9.8,<=0.10" },
+    { name = "pypgstac", specifier = ">=0.9.11,<0.10" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },

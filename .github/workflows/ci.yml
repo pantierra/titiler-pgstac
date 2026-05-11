@@ -63,7 +63,7 @@ jobs:
     needs: [tests]
     runs-on: ubuntu-latest
     env:
-      PGSTAC_VERSION: '0.9.10'
+      PGSTAC_VERSION: '0.9.11'
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 

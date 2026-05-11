@@ -64,7 +64,7 @@ dev = [
     "pytest-cov",
     "pytest-asyncio",
     "httpx",
-    "pypgstac>=0.9.8,<=0.10",
+    "pypgstac>=0.9.11,<0.10",
     "pytest-postgresql",
     "owslib",
     "pre-commit",
