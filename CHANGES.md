@@ -2,7 +2,12 @@
 
 ## Unreleased
 
+## 3.0.0 (TBD)
+
 * change: update titiler requirement to `>=2.0,<2.1`
+* change: asset notation (support for `assets={asset_name}|{option}={value}`)
+* remove: `asset_bidx` and `asset_expression` options in favor of the new asset notation
+* remove: `tile-scale` path parameter in favor of `tilesize` query parameter in tiles endpoints
 * remove: support for `vrt://{asset_name}` assets
 
 ## 2.1.0 (2026-03-05)
