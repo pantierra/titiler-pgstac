@@ -68,6 +68,11 @@ dev = [
     "pytest-postgresql",
     "owslib",
     "pre-commit",
+    "folium",
+    "IPython",
+    "jupyter",
+    "matplotlib",
+    "pyinstrument",
 ]
 benchmark = [
     "pytest-benchmark",
