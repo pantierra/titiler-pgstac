@@ -12,7 +12,7 @@ See https://docs.astral.sh/uv/getting-started/installation/ for installation
 git clone https://github.com/stac-utils/titiler-pgstac.git
 cd titiler-pgstac
 
-uv sync --extra psycopg
+uv sync
 ```
 
 You can then run the tests with the following command:

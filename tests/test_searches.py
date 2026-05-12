@@ -153,8 +153,9 @@ def test_assets_for_tile(app, search_no_bbox, search_bbox):
 
 def test_tilejson(app, search_no_bbox, search_bbox):
     """Create TileJSON."""
+    # Missing assets
     response = app.get(f"/searches/{search_no_bbox}/WebMercatorQuad/tilejson.json")
-    assert response.status_code == 400
+    assert response.status_code == 422
 
     response = app.get(
         f"/searches/{search_no_bbox}/WebMercatorQuad/tilejson.json?assets=cog"
@@ -179,11 +180,11 @@ def test_tilejson(app, search_no_bbox, search_bbox):
     )
 
     response = app.get(
-        f"/searches/{search_no_bbox}/WebMercatorQuad/tilejson.json?expression=cog"
+        f"/searches/{search_no_bbox}/WebMercatorQuad/tilejson.json?assets=cog&expression=b1"
     )
     assert response.status_code == 200
     resp = response.json()
-    assert "?expression=cog" in resp["tiles"][0]
+    assert "?assets=cog&expression=b1" in resp["tiles"][0]
 
     response = app.get(
         f"/searches/{search_no_bbox}/WorldCRS84Quad/tilejson.json?assets=cog"
@@ -232,7 +233,7 @@ def test_tiles(rio, app, search_no_bbox, search_bbox):
 
     # missing assets
     response = app.get(f"/searches/{search_no_bbox}/tiles/WebMercatorQuad/{z}/{x}/{y}")
-    assert response.status_code == 400
+    assert response.status_code == 422
 
     response = app.get(
         f"/searches/{search_no_bbox}/tiles/WebMercatorQuad/{z}/{x}/{y}?assets=cog"
@@ -389,19 +390,28 @@ def test_cql2(rio, app):
     assert round(resp["bounds"][0]) == -180
     # Make sure we return a tilejson with the `/{search_id}/tiles/{tms}` format
     assert (
-        f"/searches/{cql2_id}/tiles/WebMercatorQuad/{{z}}/{{x}}/{{y}}@1x?assets=cog"
+        f"/searches/{cql2_id}/tiles/WebMercatorQuad/{{z}}/{{x}}/{{y}}?assets=cog"
         in resp["tiles"][0]
     )
 
     z, x, y = 15, 8589, 12849
     response = app.get(
-        f"/searches/{cql2_id}/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?assets=cog"
+        f"/searches/{cql2_id}/tiles/WebMercatorQuad/{z}/{x}/{y}?assets=cog"
     )
     assert response.status_code == 200
     assert response.headers["content-type"] == "image/jpeg"
     meta = parse_img(response.content)
     assert meta["width"] == 256
     assert meta["height"] == 256
+
+    response = app.get(
+        f"/searches/{cql2_id}/tiles/WebMercatorQuad/{z}/{x}/{y}?assets=cog&tilesize=512"
+    )
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/jpeg"
+    meta = parse_img(response.content)
+    assert meta["width"] == 512
+    assert meta["height"] == 512
 
 
 @patch("rio_tiler.io.rasterio.rasterio")
@@ -719,7 +729,7 @@ def test_statistics(rio, app, search_no_bbox, search_bbox):
     response = app.post(
         f"/searches/{search_no_bbox}/statistics", json=feat, params={"max_size": 1024}
     )
-    assert response.status_code == 400
+    assert response.status_code == 422
 
     response = app.post(
         f"/searches/{search_no_bbox}/statistics",
@@ -728,7 +738,11 @@ def test_statistics(rio, app, search_no_bbox, search_bbox):
     )
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/geo+json"
-    assert response.json()["features"][0]["properties"]["statistics"]["cog_b1"]
+    assert response.json()["features"][0]["properties"]["statistics"]["b1"]
+    assert (
+        response.json()["features"][0]["properties"]["statistics"]["b1"]["description"]
+        == "cog_b1"
+    )
 
     response = app.post(
         f"/searches/{search_no_bbox}/statistics",
@@ -737,7 +751,7 @@ def test_statistics(rio, app, search_no_bbox, search_bbox):
     )
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/geo+json"
-    assert response.json()["properties"]["statistics"]["cog_b1"]
+    assert response.json()["properties"]["statistics"]["b1"]
 
     # searchId not found
     response = app.post(
@@ -754,17 +768,16 @@ def test_statistics(rio, app, search_no_bbox, search_bbox):
         f"/searches/{search_no_bbox}/statistics",
         json=feat,
         params={
-            "assets": "cog",
+            "assets": "cog|bidx=1,2",
             "max_size": 1024,
             "algorithm": "normalizedIndex",
-            "asset_bidx": "cog|1,2",
         },
     )
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/geo+json"
     resp = response.json()
     stats = resp["features"][0]["properties"]["statistics"]
-    assert "(cog_b2 - cog_b1) / (cog_b2 + cog_b1)" in stats
+    assert stats["b1"]["description"] == "(cog_b2 - cog_b1) / (cog_b2 + cog_b1)"
 
 
 def test_mosaic_list(app):
@@ -864,7 +877,7 @@ def test_mosaic_list(app):
 def test_map(app, search_bbox):
     """test /map endpoint."""
     response = app.get(f"/searches/{search_bbox}/WebMercatorQuad/map.html")
-    assert response.status_code == 400
+    assert response.status_code == 422
 
     response = app.get(
         f"/searches/{search_bbox}/WebMercatorQuad/map.html", params={"assets": "cog"}
@@ -901,7 +914,7 @@ def test_feature(rio, app, search_no_bbox):
     response = app.post(
         f"/searches/{search_no_bbox}/feature", json=feat, params={"max_size": 1024}
     )
-    assert response.status_code == 400
+    assert response.status_code == 422
 
     response = app.post(
         f"/searches/{search_no_bbox}/feature",
@@ -975,7 +988,7 @@ def test_bbox(rio, app, search_no_bbox):
     response = app.get(
         f"/searches/{search_no_bbox}/bbox/{str_bbox}.png", params={"max_size": 1024}
     )
-    assert response.status_code == 400
+    assert response.status_code == 422
 
     response = app.get(
         f"/searches/{search_no_bbox}/bbox/{str_bbox}.png",
@@ -1041,7 +1054,7 @@ def test_query_point_searches(app, search_no_bbox, search_bbox):
     values = resp["assets"]
     assert len(values) == 2
     assert values[0]["name"] == "noaa-emergency-response/20200307aC0853130w361030"
-    assert values[0]["band_names"] == ["cog_b1", "cog_b2", "cog_b3"]
+    assert values[0]["band_names"] == ["b1", "b2", "b3"]
 
     # with coord-crs
     response = app.get(

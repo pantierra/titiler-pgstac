@@ -113,7 +113,7 @@ def test_assets_for_bbox_collections(app):
 def test_tilejson_collections(app):
     """Create TileJSON."""
     response = app.get(f"/collections/{collection_id}/WebMercatorQuad/tilejson.json")
-    assert response.status_code == 400
+    assert response.status_code == 422
 
     response = app.get(
         f"/collections/{collection_id}/WebMercatorQuad/tilejson.json?assets=cog"
@@ -138,18 +138,11 @@ def test_tilejson_collections(app):
     )
 
     response = app.get(
-        f"/collections/{collection_id}/WebMercatorQuad/tilejson.json?expression=cog"
+        f"/collections/{collection_id}/WebMercatorQuad/tilejson.json?assets=cog&expression=b1"
     )
     assert response.status_code == 200
     resp = response.json()
-    assert "?expression=cog" in resp["tiles"][0]
-
-    response = app.get(
-        f"/collections/{collection_id}/WebMercatorQuad/tilejson.json?expression=cog"
-    )
-    assert response.status_code == 200
-    resp = response.json()
-    assert "?expression=cog" in resp["tiles"][0]
+    assert "?assets=cog&expression=b1" in resp["tiles"][0]
 
     response = app.get(
         f"/collections/{collection_id}/WorldCRS84Quad/tilejson.json?assets=cog"
@@ -189,7 +182,7 @@ def test_tiles_collections(rio, app):
     response = app.get(
         f"/collections/{collection_id}/tiles/WebMercatorQuad/{z}/{x}/{y}"
     )
-    assert response.status_code == 400
+    assert response.status_code == 422
 
     response = app.get(
         f"/collections/{collection_id}/tiles/WebMercatorQuad/{z}/{x}/{y}?assets=cog"
@@ -318,7 +311,7 @@ def test_statistics_collections(rio, app):
     response = app.post(
         f"/collections/{collection_id}/statistics", json=feat, params={"max_size": 1024}
     )
-    assert response.status_code == 400
+    assert response.status_code == 422
 
     response = app.post(
         f"/collections/{collection_id}/statistics",
@@ -327,7 +320,11 @@ def test_statistics_collections(rio, app):
     )
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/geo+json"
-    assert response.json()["features"][0]["properties"]["statistics"]["cog_b1"]
+    assert response.json()["features"][0]["properties"]["statistics"]["b1"]
+    assert (
+        response.json()["features"][0]["properties"]["statistics"]["b1"]["description"]
+        == "cog_b1"
+    )
 
     response = app.post(
         f"/collections/{collection_id}/statistics",
@@ -336,7 +333,7 @@ def test_statistics_collections(rio, app):
     )
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/geo+json"
-    assert response.json()["properties"]["statistics"]["cog_b1"]
+    assert response.json()["properties"]["statistics"]["b1"]
 
     # CollectionId not found
     response = app.post(
@@ -352,7 +349,7 @@ def test_statistics_collections(rio, app):
 def test_map_collection(app):
     """test /map endpoint."""
     response = app.get(f"/collections/{collection_id}/WebMercatorQuad/map.html")
-    assert response.status_code == 400
+    assert response.status_code == 422
 
     response = app.get(
         f"/collections/{collection_id}/WebMercatorQuad/map.html",
@@ -390,7 +387,7 @@ def test_feature_collection(rio, app):
     response = app.post(
         f"/collections/{collection_id}/feature", json=feat, params={"max_size": 1024}
     )
-    assert response.status_code == 400
+    assert response.status_code == 422
 
     response = app.post(
         f"/collections/{collection_id}/feature",
@@ -464,7 +461,7 @@ def test_bbox_collection(rio, app):
     response = app.get(
         f"/collections/{collection_id}/bbox/{str_bbox}.png", params={"max_size": 1024}
     )
-    assert response.status_code == 400
+    assert response.status_code == 422
 
     response = app.get(
         f"/collections/{collection_id}/bbox/{str_bbox}.png",
@@ -528,7 +525,7 @@ def test_query_point_collections(app):
     values = resp["assets"]
     assert len(values) == 2
     assert values[0]["name"] == "noaa-emergency-response/20200307aC0853130w361030"
-    assert values[0]["band_names"] == ["cog_b1", "cog_b2", "cog_b3"]
+    assert values[0]["band_names"] == ["b1", "b2", "b3"]
     assert values[0]["values"] == [27.0, 34.0, 42.0]
     assert values[1]["name"] == "noaa-emergency-response/20200307aC0853000w361030"
 

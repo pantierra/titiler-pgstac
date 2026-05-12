@@ -5,7 +5,7 @@
 | `GET`  | `/searches/{search_id}/tiles`                                                       | JSON                                    | List of OGC Tilesets available
 | `GET`  | `/searches/{search_id}/tiles/{tileMatrixSetId}`                                     | JSON                                    | OGC Tileset metadata
 | `GET`  | `/searches/{search_id}/tiles/{TileMatrixSetId}/{z}/{x}/{Y}/assets`                  | JSON                                    | Return a list of assets which overlap a given tile
-| `GET`  | `/searches/{search_id}/tiles/{TileMatrixSetId}/{z}/{x}/{y}[@{scale}x][.{format}]`   | image/bin                               | Create a web map tile image for a search query and a tile index
+| `GET`  | `/searches/{search_id}/tiles/{TileMatrixSetId}/{z}/{x}/{y}[.{format}]`              | image/bin                               | Create a web map tile image for a search query and a tile index
 | `GET`  | `/searches/{search_id}/{TileMatrixSetId}/map`                                       | HTML                                    | Simple map viewer
 | `GET`  | `/searches/{search_id}/{TileMatrixSetId}/tilejson.json`                             | JSON ([TileJSON][tilejson_model])       | Return a Mapbox TileJSON document
 | `GET`  | `/searches/{search_id}/bbox/{minx},{miny},{maxx},{maxy}[/{width}x{height}].{format}`| image/bin                               | Create an image from part of a dataset
@@ -18,23 +18,34 @@
 | `POST` | `/searches/register`                                                                | JSON ([Register][register_model])       | Register **Search** query
 | `GET`  | `/searches/`                                                                        | JSON ([Infos][infos_model])             | Return list of **Search** entries with `Mosaic` type
 
+### Assets With Options 
+
+`assets=` query parameter can be used to specify which assets to use for a given request, but also to specify options for each asset using the following syntax: `assets={asset_name}|OPTION1=VALUE1|OPTION2=VALUE2`. 
+
+For example: `assets=visual|bidx=1,2|expression=(b2-b1)/(b2+b1)` will select the band 1 and 2 of within the `visual` asset and apply a normalized difference indexes expression.
+
+ref: 
+
+- https://cogeotiff.github.io/rio-tiler/latest/migrations/v9_migration/#stacreader-asset-options-syntax
+- https://developmentseed.org/titiler/migrations/v2_migration/#7-removed-asset_indexes-and-asset_expression-options
+
 ### Tiles
 
-`:endpoint:/searches/{search_id}/tiles/{TileMatrixSetId}/{z}/{x}/{y}[@{scale}x][.{format}]`
+`:endpoint:/searches/{search_id}/tiles/{TileMatrixSetId}/{z}/{x}/{y}[.{format}]`
 
 - PathParams:
     - **search_id**: PgSTAC Search Identifier (Hash).
     - **TileMatrixSetId**: TileMatrixSet name.
+    - **z**: Tile's zoom level.
     - **x**: Tile's column.
     - **y**: Tile's row.
-    - **scale**: Tile size scale, default is set to 1 (256x256). OPTIONAL
     - **format**: Output image format, default is set to None and will be either JPEG or PNG depending on masked value. OPTIONAL
 
 - QueryParams:
-    - **assets** (array[str]): asset names.
-    - **expression** (str): rio-tiler's math expression with asset names (e.g `Asset1_b1/Asset2_b1`).
-    - **asset_as_band** (bool): tell rio-tiler that each asset is a 1 band dataset, so expression `Asset1/Asset2` can be passed.
-    - **asset_bidx** (array[str]): Per asset band index (e.g `Asset1|1;2;3`).
+    - **assets** (array[str]): asset names. **Required**
+    - **expression** (str): rio-tiler's math expression (e.g `b1/b2`).
+    - **asset_as_band** (bool): tell rio-tiler that each asset is a 1 band dataset.
+    - **tilesize** (int): overwrite TMS tileWidth x tileHeight with fixed tilesize.
     - **nodata**: Overwrite internal Nodata value. OPTIONAL
     - **unscale** (bool): Apply dataset internal Scale/Offset.
     - **resampling** (str): RasterIO resampling algorithm. Defaults to `nearest`.
@@ -55,15 +66,12 @@
     - **exitwhenfull** (bool): Return as soon as the geometry is fully covered, Default is `True` in PgSTAC.
     - **skipcovered** (bool): Skip any items that would show up completely under the previous items, Default is `True` in PgSTAC.
 
-!!! important
-    **assets** OR **expression** is required
-
 Example:
 
 - `https://myendpoint/searches/f1ed59f0a6ad91ed80ae79b7b52bc707/tiles/WebMercatorQuad/1/2/3?assets=B01`
 - `https://myendpoint/searches/f1ed59f0a6ad91ed80ae79b7b52bc707/tiles/WebMercatorQuad/1/2/3.jpg?assets=B01`
 - `https://myendpoint/searches/f1ed59f0a6ad91ed80ae79b7b52bc707/tiles/WorldCRS84Quad/1/2/3@2x.png?assets=B01&assets=B02&assets=B03`
-- `https://myendpoint/searches/f1ed59f0a6ad91ed80ae79b7b52bc707/tiles/WorldCRS84Quad/1/2/3?assets=B01&rescale=0,1000&colormap_name=cfastie`
+- `https://myendpoint/searches/f1ed59f0a6ad91ed80ae79b7b52bc707/tiles/WorldCRS84Quad/1/2/3?assets=B01&assets=B02expression=b1/b2&rescale=0,1000&colormap_name=cfastie`
 
 ### TilesJSON
 
@@ -74,13 +82,13 @@ Example:
     - **TileMatrixSetId**: TileMatrixSet name.
 
 - QueryParams:
+    - **assets** (array[str]): asset names. **Required**
+    - **expression** (str): rio-tiler's math expression (e.g `b1/b2`).
+    - **asset_as_band** (bool): tell rio-tiler that each asset is a 1 band dataset.
     - **tile_format**: Output image format, default is set to None and will be either JPEG or PNG depending on masked value.
-    - **tile_scale**: Tile size scale, default is set to 1 (256x256). OPTIONAL
-    - **minzoom**: Overwrite default minzoom. OPTIONAL
-    - **maxzoom**: Overwrite default maxzoom. OPTIONAL
-    - **expression** (str): rio-tiler's math expression with asset names (e.g `Asset1_b1/Asset2_b1`).
-    - **asset_as_band** (bool): tell rio-tiler that each asset is a 1 band dataset, so expression `Asset1/Asset2` can be passed.
-    - **asset_bidx** (array[str]): Per asset band index (e.g `Asset1|1;2;3`).
+    - **tilesize** (int): overwrite TMS tileWidth x tileHeight with fixed tilesize. Defaults to **512**.
+    - **minzoom**: Overwrite default minzoom.
+    - **maxzoom**: Overwrite default maxzoom.
     - **nodata** (str, int, float): Overwrite internal Nodata value.
     - **unscale** (bool): Apply dataset internal Scale/Offset.
     - **resampling** (str): RasterIO resampling algorithm. Defaults to `nearest`.
@@ -101,14 +109,11 @@ Example:
     - **exitwhenfull** (bool): Return as soon as the geometry is fully covered, Default is `True` in PgSTAC.
     - **skipcovered** (bool): Skip any items that would show up completely under the previous items, Default is `True` in PgSTAC.
 
-!!! important
-    **assets** OR **expression** is required
-
 Example:
 
 - `https://myendpoint/searches/f1ed59f0a6ad91ed80ae79b7b52bc707/WebMercatorQuad/tilejson.json?assets=B01`
 - `https://myendpoint/searches/f1ed59f0a6ad91ed80ae79b7b52bc707/WebMercatorQuad/tilejson.json?assets=B01&tile_format=png`
-- `https://myendpoint/searches/f1ed59f0a6ad91ed80ae79b7b52bc707/WorldCRS84Quad/tilejson.json?assets=B01&tile_scale=2`
+- `https://myendpoint/searches/f1ed59f0a6ad91ed80ae79b7b52bc707/WorldCRS84Quad/tilejson.json?assets=B01&tilesize=256`
 
 
 ### WMTS
@@ -120,22 +125,21 @@ Example:
 
 - QueryParams:
     - **tile_format**: Output image format, default is set to PNG.
-    - **tile_scale**: Tile size scale, default is set to 1 (256x256). OPTIONAL
+    - **tilesize** (int): overwrite TMS tileWidth x tileHeight with fixed tilesize.
     - **minzoom**: Overwrite default minzoom. OPTIONAL
     - **maxzoom**: Overwrite default maxzoom. OPTIONAL
 
 
 !!! important
-    additional query-parameters will be forwarded to the `tile` URL. If no `defaults` mosaic metadata, **assets** OR **expression** will be required
+    additional query-parameters will be forwarded to the `tile` URL. If no `defaults` mosaic metadata, **assets** will be required.
 
 Example:
 
 - `https://myendpoint/searches/f1ed59f0a6ad91ed80ae79b7b52bc707/WMTSCapabilities.xml?assets=B01`
 - `https://myendpoint/searches/f1ed59f0a6ad91ed80ae79b7b52bc707/WMTSCapabilities.xml?assets=B01&tile_format=png`
-- `https://myendpoint/searches/f1ed59f0a6ad91ed80ae79b7b52bc707/WMTSCapabilities.xml?assets=B01&tile_scale=2`
 
 
-### Assets for Point or Tile
+### Assets for Point or Tile or bbox
 
 `:endpoint:/searches/{search_id}/tiles/{TileMatrixSetId}/{z}/{x}/{y}/assets`
 
@@ -175,6 +179,29 @@ Example:
 
 - `https://myendpoint/searches/f1ed59f0a6ad91ed80ae79b7b52bc707/point/0.0,0.0/assets`
 
+`:endpoint:/searches/{search_id}/bbox/{minx},{miny},{maxx},{maxy}/assets`
+
+- PathParams:
+    - **search_id**: PgSTAC Search Identifier (Hash).
+    - **minx,miny,maxx,maxy** (str): Comma (',') delimited bounding box
+
+- QueryParams:
+    - **coord_crs** (str): Coordinate Reference System of the input coordinates. Default to `epsg:4326`.
+    - **scan_limit** (int): Return as soon as we scan N items, Default is 10,000 in PgSTAC.
+    - **items_limit** (int): Return as soon as we have N items per geometry, Default is 100 in PgSTAC.
+    - **time_limit** (int): Return after N seconds to avoid long requests, Default is 5sec in PgSTAC.
+    - **exitwhenfull** (bool): Return as soon as the geometry is fully covered, Default is `True` in PgSTAC.
+    - **skipcovered** (bool): Skip any items that would show up completely under the previous items, Default is `True` in PgSTAC.
+    - **ids** (str): Array of Item ids to show.
+    - **bbox** (str): Filters items intersecting this bounding box.
+    - **datetime** (str):Filters items that have a temporal property that intersects this value. Either a date-time or an interval, open or closed.
+    - **query** (str): Filters items based on property values.
+    - **sortby** (str): Comma "," delimited property names, prefixed by either '+' for ascending or '-' for descending. If no prefix is provided, '+' is assumed.
+
+Example:
+
+- `https://myendpoint/searches/f1ed59f0a6ad91ed80ae79b7b52bc707/bbox/0,0,0,0/assets`
+
 ### Statistics
 
 `:endpoint:/searches/{search_id}/statistics - [POST]`
@@ -186,10 +213,9 @@ Example:
     - **search_id**: PgSTAC Search Identifier (Hash).
 
 - QueryParams:
-    - **assets** (array[str]): asset names.
-    - **expression** (str): rio-tiler's math expression with asset names (e.g `Asset1_b1/Asset2_b1`).
-    - **asset_as_band** (bool): tell rio-tiler that each asset is a 1 band dataset, so expression `Asset1/Asset2` can be passed.
-    - **asset_bidx** (array[str]): Per asset band index (e.g `Asset1|1;2;3`).
+    - **assets** (array[str]): asset names. **Required**
+    - **expression** (str): rio-tiler's math expression (e.g `b1/b2`).
+    - **asset_as_band** (bool): tell rio-tiler that each asset is a 1 band dataset.
     - **coord_crs** (str): Coordinate Reference System of the input geometry. Default to `epsg:4326`.
     - **dst_crs** (str): Output Coordinate Reference System. Default to `coord_crs`.
     - **max_size** (int): Max image size from which to calculate statistics.
@@ -216,6 +242,10 @@ Example:
 !!! important
     if **height** and **width** are provided **max_size** will be ignored.
 
+
+!!! note
+    Use `assets=:all:` to use all available assets
+
 Example:
 
 - `https://myendpoint/searches/f1ed59f0a6ad91ed80ae79b7b52bc707/statistics?assets=B01`
@@ -234,10 +264,9 @@ Example:
     - **width** (int): Force output image width.
 
 - QueryParams:
-    - **assets** (array[str]): asset names.
-    - **expression** (str): rio-tiler's math expression with asset names (e.g `Asset1_b1/Asset2_b1`).
-    - **asset_as_band** (bool): tell rio-tiler that each asset is a 1 band dataset, so expression `Asset1/Asset2` can be passed.
-    - **asset_bidx** (array[str]): Per asset band index (e.g `Asset1|1;2;3`).
+    - **assets** (array[str]): asset names. **Required**
+    - **expression** (str): rio-tiler's math expression (e.g `b1/b2`).
+    - **asset_as_band** (bool): tell rio-tiler that each asset is a 1 band dataset.
     - **coord_crs** (str): Coordinate Reference System of the input coordinates. Default to `epsg:4326`.
     - **dst_crs** (str): Output Coordinate Reference System. Default to `coord_crs`.
     - **max_size** (int): Max image size.
@@ -280,10 +309,9 @@ Example:
     - **format** (str): Output image format, default is set to None and will be either JPEG or PNG depending on masked value. **Optional**
 
 - QueryParams:
-    - **assets** (array[str]): asset names.
-    - **expression** (str): rio-tiler's math expression with asset names (e.g `Asset1_b1/Asset2_b1`).
-    - **asset_as_band** (bool): tell rio-tiler that each asset is a 1 band dataset, so expression `Asset1/Asset2` can be passed.
-    - **asset_bidx** (array[str]): Per asset band index (e.g `Asset1|1;2;3`).
+    - **assets** (array[str]): asset names. **Required**
+    - **expression** (str): rio-tiler's math expression (e.g `b1/b2`).
+    - **asset_as_band** (bool): tell rio-tiler that each asset is a 1 band dataset.
     - **coord_crs** (str): Coordinate Reference System of the input geometry. Default to `epsg:4326`.
     - **dst_crs** (str): Output Coordinate Reference System. Default to `coord_crs`.
     - **max_size** (int): Max image size.
@@ -324,10 +352,9 @@ Example:
     - **lat**: Latitude (in `coord-crs`, defaults to `WGS84`).
 
 - QueryParams:
-    - **assets** (array[str]): asset names.
-    - **expression** (str): rio-tiler's math expression with asset names (e.g `Asset1_b1/Asset2_b1`).
-    - **asset_as_band** (bool): tell rio-tiler that each asset is a 1 band dataset, so expression `Asset1/Asset2` can be passed.
-    - **asset_bidx** (array[str]): Per asset band index (e.g `Asset1|1;2;3`).
+    - **assets** (array[str]): asset names. **Required**
+    - **expression** (str): rio-tiler's math expression (e.g `b1/b2`).
+    - **asset_as_band** (bool): tell rio-tiler that each asset is a 1 band dataset.
     - **coord_crs** (str): Coordinate Reference System of the input geometry. Default to `epsg:4326`.
     - **nodata** (str, int, float): Overwrite internal Nodata value.
     - **unscale** (bool): Apply dataset internal Scale/Offset.
@@ -338,9 +365,6 @@ Example:
     - **time_limit** (int): Return after N seconds to avoid long requests, Default is 5sec in PgSTAC.
     - **exitwhenfull** (bool): Return as soon as the geometry is fully covered, Default is `True` in PgSTAC.
     - **skipcovered** (bool): Skip any items that would show up completely under the previous items, Default is `True` in PgSTAC.
-
-!!! important
-    **assets** OR **expression** is required
 
 Example:
 
@@ -493,7 +517,7 @@ curl 'http://127.0.0.1:8081/searches/5a1b82d38d53a5d200273cbada886bd7/info' | jq
 
 ### List Searches
 
-`:endpoint:/searches/list - [GET]`
+`:endpoint:/searches - [GET]`
 
 - QueryParams:
     - **limit** (int): Page size limit, Default is `10`.

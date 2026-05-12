@@ -19,7 +19,7 @@ from starlette.requests import Request
 from starlette.routing import NoMatchFound
 from typing_extensions import Annotated
 
-from titiler.core.dependencies import AssetsBidxExprParams, DefaultDependency
+from titiler.core.dependencies import AssetsExprParams, DefaultDependency
 from titiler.core.utils import check_query_params
 from titiler.mosaic.factory import MosaicTilerFactory as BaseFactory
 from titiler.pgstac import model
@@ -52,8 +52,8 @@ class MosaicTilerFactory(BaseFactory):
     # Backend.get_assets() Options
     assets_accessor_dependency: type[DefaultDependency] = PgSTACParams
 
-    # Assets/Indexes/Expression Dependencies
-    layer_dependency: type[DefaultDependency] = AssetsBidxExprParams
+    # Assets/Expression Dependencies
+    layer_dependency: type[DefaultDependency] = AssetsExprParams
 
     def register_routes(self) -> None:
         """Custom: remove `self.info()."""
