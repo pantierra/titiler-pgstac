@@ -834,3 +834,16 @@ def test_bbox_validation(app) -> None:
         f"/collections/{collection_id}/tiles", params={"bbox": "180,-90,-180,90"}
     )
     assert invalid_values_response.status_code == 422
+
+
+def test_nullbyte_error(app) -> None:
+    """Raise 500 error when request contains null byte."""
+    response = app.get(
+        f"/collections/{collection_id}%00/info",
+    )
+    assert response.status_code == 500
+
+    response = app.get(
+        f"/collections/{collection_id}/tiles/WebMercatorQuad/15/8589/12849/assets?sortby=-gsd%00",
+    )
+    assert response.status_code == 500

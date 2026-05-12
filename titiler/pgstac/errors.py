@@ -17,8 +17,13 @@ class NoLayerFound(TilerError):
     """Cannot find any valid Layer."""
 
 
+class BackendError(TilerError):
+    """Backend error."""
+
+
 PGSTAC_STATUS_CODES = {
     ReadOnlyPgSTACError: status.HTTP_500_INTERNAL_SERVER_ERROR,
+    BackendError: status.HTTP_500_INTERNAL_SERVER_ERROR,
     NoLayerFound: status.HTTP_400_BAD_REQUEST,
     MosaicNotFoundError: status.HTTP_404_NOT_FOUND,
 }

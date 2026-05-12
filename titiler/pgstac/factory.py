@@ -24,7 +24,12 @@ from titiler.core.utils import check_query_params
 from titiler.mosaic.factory import MosaicTilerFactory as BaseFactory
 from titiler.pgstac import model
 from titiler.pgstac.backend import PGSTACBackend
-from titiler.pgstac.dependencies import BackendParams, PgSTACParams, SearchParams
+from titiler.pgstac.dependencies import (
+    BackendParams,
+    PgSTACParams,
+    SearchParams,
+    register_search_in_db,
+)
 from titiler.pgstac.errors import ReadOnlyPgSTACError
 from titiler.pgstac.reader import SimpleSTACReader
 
@@ -117,15 +122,7 @@ def add_search_register_route(  # noqa: C901
                     conn.rollback()
                     pass
 
-                cursor.row_factory = class_row(model.Search)
-                cursor.execute(
-                    "SELECT * FROM search_query(%s, _metadata => %s);",
-                    (
-                        search.model_dump_json(by_alias=True, exclude_none=True),
-                        metadata.model_dump_json(exclude_none=True),
-                    ),
-                )
-                search_info = cursor.fetchone()
+                search_info = register_search_in_db(cursor, search, metadata)
 
         links: list[model.Link] = []
 

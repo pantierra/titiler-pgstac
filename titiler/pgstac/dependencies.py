@@ -1,6 +1,7 @@
 """titiler-pgstac dependencies."""
 
 import json
+import logging
 import re
 import warnings
 from dataclasses import dataclass, field
@@ -14,6 +15,7 @@ from cachetools import TTLCache, cached
 from cachetools.keys import hashkey
 from cql2 import Expr
 from fastapi import HTTPException, Path, Query
+from psycopg import Cursor
 from psycopg import errors as pgErrors
 from psycopg.rows import class_row, dict_row
 from psycopg_pool import ConnectionPool
@@ -25,10 +27,12 @@ from typing_extensions import Annotated
 from titiler.core.dependencies import DefaultDependency
 from titiler.core.validation import validate_json
 from titiler.pgstac import model
-from titiler.pgstac.errors import MosaicNotFoundError, ReadOnlyPgSTACError
+from titiler.pgstac.errors import BackendError, MosaicNotFoundError, ReadOnlyPgSTACError
 from titiler.pgstac.settings import CacheSettings, RetrySettings
 from titiler.pgstac.utils import retry
 from titiler.pgstac.validation import parse_and_validate_bbox, validate_filter
+
+logger = logging.getLogger(__name__)
 
 cache_config = CacheSettings()
 retry_config = RetrySettings()
@@ -43,6 +47,31 @@ def SearchIdParams(
 ) -> str:
     """search_id"""
     return search_id
+
+
+def register_search_in_db(
+    cursor: Cursor[Any],
+    search: model.PgSTACSearch,
+    metadata: model.Metadata,
+) -> model.Search:
+    """Register the search query in the database and return the Search info."""
+    cursor.row_factory = class_row(model.Search)  # type: ignore
+    try:
+        cursor.execute(
+            "SELECT * FROM search_query(%s, _metadata => %s);",
+            (
+                search.model_dump_json(by_alias=True, exclude_none=True),
+                metadata.model_dump_json(exclude_none=True),
+            ),
+        )
+        search_info = cast(model.Search, cursor.fetchone())
+    except pgErrors.DataError as e:
+        logger.exception(e)
+        raise BackendError(
+            f"Backend returned an error for mosaic with body {search.model_dump_json(by_alias=True, exclude_none=True)}"
+        ) from e
+
+    return search_info
 
 
 @cached(  # type: ignore
@@ -119,11 +148,18 @@ def get_collection_id(  # noqa: C901
     search = model.PgSTACSearch.model_validate(search_params)
     with pool.connection() as conn:
         with conn.cursor(row_factory=dict_row) as cursor:
-            cursor.execute(
-                "SELECT * FROM pgstac.get_collection(%s);",
-                (collection_id,),
-            )
-            collection = cursor.fetchone()["get_collection"]  # type: ignore [index]
+            try:
+                cursor.execute(
+                    "SELECT * FROM pgstac.get_collection(%s);",
+                    (collection_id,),
+                )
+                collection = cursor.fetchone()["get_collection"]  # type: ignore [index]
+            except pgErrors.DataError as e:
+                logger.exception(e)
+                raise BackendError(
+                    f"Backend returned an error for Collection `{collection_id}`"
+                ) from e
+
             if not collection:
                 raise MosaicNotFoundError(f"CollectionId `{collection_id}` not found")
 
@@ -182,15 +218,7 @@ def get_collection_id(  # noqa: C901
                 conn.rollback()
                 pass
 
-            cursor.row_factory = class_row(model.Search)  # type: ignore
-            cursor.execute(
-                "SELECT * FROM search_query(%s, _metadata => %s);",
-                (
-                    search.model_dump_json(by_alias=True, exclude_none=True),
-                    metadata.model_dump_json(exclude_none=True),
-                ),
-            )
-            search_info = cast(model.Search, cursor.fetchone())
+            search_info = register_search_in_db(cursor, search, metadata)
 
     return search_info.id
 
