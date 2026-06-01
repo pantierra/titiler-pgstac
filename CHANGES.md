@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## 3.0.0 (TBD)
+## 3.0.0 (2026-06-01)
 
 * change: update titiler requirement to `>=2.0,<2.1`
 * change: asset notation (support for `assets={asset_name}|{option}={value}`)
