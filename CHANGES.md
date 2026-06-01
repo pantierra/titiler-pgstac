@@ -9,6 +9,7 @@
 * remove: `asset_bidx` and `asset_expression` options in favor of the new asset notation
 * remove: `tile-scale` path parameter in favor of `tilesize` query parameter in tiles endpoints
 * remove: support for `vrt://{asset_name}` assets
+* fix: catch `null byte` error from the database
 
 ## 2.1.0 (2026-03-05)
 
