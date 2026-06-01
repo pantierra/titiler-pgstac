@@ -119,41 +119,6 @@ jobs:
       - name: Stop services
         run: docker compose stop
 
-  publish:
-    needs: [tests]
-    runs-on: ubuntu-latest
-    if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'release'
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      
-      - name: Install uv
-        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
-        with:
-          version: "0.9.*" 
-          enable-cache: true
-          python-version: ${{ env.LATEST_PY_VERSION }}
-
-      - name: Set tag version
-        id: tag
-        run: |
-          echo "version=${GITHUB_REF#refs/*/}"
-          echo "version=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-
-      - name: Set module version
-        id: module
-        run: |
-          echo version=$(uv run python -c'import titiler.pgstac; print(titiler.pgstac.__version__)') >> $GITHUB_OUTPUT
-      
-      - name: Build and publish
-        if: ${{ steps.tag.outputs.version }} == ${{ steps.module.outputs.version}}
-        env:
-          UV_PUBLISH_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          UV_PUBLISH_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: |
-          rm -rf dist
-          uv build
-          uv publish dist/*
-
   publish-docker:
     needs: [tests]
     if: github.ref == 'refs/heads/main' || startsWith(github.event.ref, 'refs/tags') || github.event_name == 'release'

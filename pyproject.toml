@@ -88,6 +88,9 @@ docs = [
 server = [
     "uvicorn",
 ]
+deploy = [
+    "hatch",
+]
 
 [project.urls]
 Homepage = 'https://stac-utils.github.io/titiler-pgstac/'
