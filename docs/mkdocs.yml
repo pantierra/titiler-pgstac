@@ -50,6 +50,7 @@ nav:
     - v0.8 -> v1.0: migrations/v1_migration.md
     - v1.9 -> v2.0: migrations/v2_migration.md
     - v2.0 -> v3.0: migrations/v3_migration.md
+  - OpenAPI schema: openapi.json
   - Development - Contributing: contributing.md
   - Release notes: release-notes.md
   - Performance Benchmarks: benchmark.html
