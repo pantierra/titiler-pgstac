@@ -70,6 +70,11 @@
 
 * switch from bitnami to official python:3.12 docker image
 
+## 1.8.1 (2026-01-29)
+
+* fix `title` for WMTS layers 
+* switch from bitnami to official python:3.12 docker image
+
 ## 1.8.0 (2025-05-12)
 
 * update titiler requirement to `>=0.22,<0.23`
