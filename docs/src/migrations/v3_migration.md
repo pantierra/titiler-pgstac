@@ -50,4 +50,4 @@ For `info` and `statistics` endpoints, the `assets` parameter is now mandatory. 
 
 **Impact:** Medium - Affects all functionality
 
-`vrt://` connection string is longer allowed.
+`vrt://` connection string is no longer allowed.
