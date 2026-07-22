@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+* Response compression via `starlette-cramjam` (image mediatypes excluded).
+
 ## 3.0.0 (2026-06-01)
 
 * change: update titiler requirement to `>=2.0,<2.1`
