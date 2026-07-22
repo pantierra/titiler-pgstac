@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+* Exclude `/healthz` from default `Cache-Control` middleware paths.
+
 ## 3.0.0 (2026-06-01)
 
 * change: update titiler requirement to `>=2.0,<2.1`
