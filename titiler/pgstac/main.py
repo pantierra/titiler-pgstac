@@ -14,6 +14,7 @@ from pydantic import ValidationError
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.templating import Jinja2Templates
+from starlette_cramjam.middleware import CompressionMiddleware
 from typing_extensions import Annotated
 
 from titiler.core import __version__ as titiler_version
@@ -128,6 +129,18 @@ app.add_middleware(
     CacheControlMiddleware,
     cachecontrol=settings.cachecontrol,
     exclude_path=settings.cachecontrol_exclude_paths,
+)
+
+app.add_middleware(
+    CompressionMiddleware,
+    exclude_mediatype={
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/jp2",
+        "image/webp",
+        "image/tiff",
+    },
 )
 
 optional_headers = []

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+* Response compression via `starlette-cramjam` (image mediatypes excluded).
+
 ### Fixed
 
 * Exclude `/healthz` from default `Cache-Control` middleware paths.
