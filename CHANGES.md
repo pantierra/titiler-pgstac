@@ -5,6 +5,11 @@
 ### Added
 
 * Response compression via `starlette-cramjam` (image mediatypes excluded).
+* Optional Prometheus metrics via [metrics] extra, `TITILER_PGSTAC_API_METRICS_ENABLED`,
+  and `/metrics` endpoint, with prefixed low-cardinality `operation` labels
+  (`titiler_pgstac_http_requests_total`,
+  `titiler_pgstac_http_request_duration_seconds`) and
+  `PROMETHEUS_MULTIPROC_DIR` support for multi-worker deployments.
 
 ### Fixed
 

@@ -24,6 +24,7 @@ class ApiSettings(BaseSettings):
         default={
             "/healthz",
             ".+/list",
+            "/metrics",
         }
     )
     root_path: str = ""
@@ -33,6 +34,7 @@ class ApiSettings(BaseSettings):
     enable_external_dataset_endpoints: bool = False
 
     telemetry_enabled: bool = False
+    metrics_enabled: bool = False
 
     model_config = SettingsConfigDict(
         env_prefix="TITILER_PGSTAC_API_", env_file=".env", extra="ignore"
