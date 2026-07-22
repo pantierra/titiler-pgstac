@@ -10,6 +10,7 @@ def test_database_online(app):
     """check health endpoints."""
     response = app.get("/healthz")
     assert response.status_code == 200
+    assert not response.headers.get("Cache-Control")
     resp = response.json()
     assert resp["database_online"]
 
